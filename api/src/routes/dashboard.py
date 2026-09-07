@@ -1,7 +1,12 @@
 from fastapi import APIRouter, HTTPException
 
-from src.dashboard.models import Dashboard, DashboardRequest
-from src.dashboard.service import generate_dashboard
+from src.dashboard.models import (
+    Dashboard,
+    DashboardRequest,
+)
+from src.dashboard.service import (
+    generate_dashboard,
+)
 
 
 router = APIRouter(
@@ -20,14 +25,15 @@ def create_dashboard(
     try:
         return generate_dashboard(request)
 
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The LLM returned an invalid dashboard.",
-        ) from exc
-
     except Exception as exc:
+        print(
+            f"Dashboard generation error: "
+            f"{type(exc).__name__}: {exc}"
+        )
+
         raise HTTPException(
             status_code=500,
-            detail="Failed to generate dashboard.",
+            detail=(
+                f"Failed to generate dashboard: {exc}"
+            ),
         ) from exc

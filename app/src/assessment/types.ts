@@ -1,3 +1,10 @@
+export type DashboardMode =
+  | "today"
+  | "lonely"
+  | "overwhelmed"
+  | "motivation"
+  | "talk";
+
 export type QuestionType =
   | "text"
   | "single_choice"
@@ -12,8 +19,10 @@ export interface QuestionOption {
 export interface Question {
   id: string;
   type: QuestionType;
+
   title: string;
   description?: string;
+
   required?: boolean;
 
   options?: QuestionOption[];
@@ -23,8 +32,16 @@ export interface Question {
   step?: number;
 
   placeholder?: string;
+
+  modes?: DashboardMode[];
 }
 
-export type Answer = string | string[] | number;
+export type Answer =
+  | string
+  | string[]
+  | number;
 
-export type Answers = Record<string, Answer>;
+export type Answers = Record<
+  string,
+  Answer
+>;

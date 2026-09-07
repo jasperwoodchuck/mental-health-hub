@@ -2,10 +2,21 @@ import type {
   Dashboard as DashboardData,
 } from "../api/dashboard";
 
+
 interface DashboardProps {
   dashboard: DashboardData;
   onRestart: () => void;
 }
+
+
+const modeLabels = {
+  today: "TODAY",
+  lonely: "CONNECTION",
+  overwhelmed: "OVERLOAD",
+  motivation: "MOMENTUM",
+  talk: "THOUGHTS",
+};
+
 
 export function Dashboard({
   dashboard,
@@ -20,7 +31,10 @@ export function Dashboard({
         <header className="dashboard-header">
           <div>
             <span className="eyebrow">
-              PERSONAL SYSTEM
+              PERSONAL SYSTEM //{" "}
+              {modeLabels[
+                dashboard.mode
+              ]}
             </span>
 
             <h1 className="dashboard-title">
@@ -34,14 +48,39 @@ export function Dashboard({
 
           <div className="system-badge">
             <span className="system-dot" />
-            PROFILE SYNCHRONIZED
+
+            PROFILE
+            CALIBRATED
           </div>
         </header>
 
+
         <div className="dashboard-grid">
-          <section className="dashboard-card analysis-card">
+          {/* Personal read */}
+
+          <section className="dashboard-card personal-read">
             <span className="card-label">
-              ANALYSIS // 01
+              YOUR READ // 01
+            </span>
+
+            <h2>
+              {dashboard.personal_read.headline}
+            </h2>
+
+            <p>
+              {
+                dashboard.personal_read
+                  .description
+              }
+            </p>
+          </section>
+
+
+          {/* Summary */}
+
+          <section className="dashboard-card summary-card">
+            <span className="card-label">
+              RIGHT NOW // 02
             </span>
 
             <h2>
@@ -49,30 +88,91 @@ export function Dashboard({
             </h2>
 
             <p>
-              {dashboard.summary.description}
+              {
+                dashboard.summary
+                  .description
+              }
             </p>
           </section>
 
+
+          {/* Quick win */}
+
+          <section className="dashboard-card quick-win-card">
+            <div className="quick-win-header">
+              <span className="card-label">
+                QUICK WIN // 03
+              </span>
+
+              <span className="duration">
+                {
+                  dashboard.quick_win
+                    .duration
+                }
+              </span>
+            </div>
+
+            <h2>
+              {dashboard.quick_win.title}
+            </h2>
+
+            <p>
+              {
+                dashboard.quick_win
+                  .description
+              }
+            </p>
+
+            <div className="activation-line">
+              <span />
+              READY TO START
+            </div>
+          </section>
+
+
+          {/* Strengths */}
+
           <section className="dashboard-card">
             <span className="card-label">
-              STRENGTHS // 02
+              WHAT YOU'VE GOT // 04
             </span>
 
-            <ul className="strength-list">
+            <div className="strength-list">
               {dashboard.strengths.map(
                 (strength) => (
-                  <li key={strength}>
-                    <span>◆</span>
-                    {strength}
-                  </li>
+                  <article
+                    className="strength-item"
+                    key={strength.title}
+                  >
+                    <span className="strength-mark">
+                      ◆
+                    </span>
+
+                    <div>
+                      <strong>
+                        {
+                          strength.title
+                        }
+                      </strong>
+
+                      <p>
+                        {
+                          strength.description
+                        }
+                      </p>
+                    </div>
+                  </article>
                 ),
               )}
-            </ul>
+            </div>
           </section>
+
+
+          {/* Focus areas */}
 
           <section className="dashboard-card wide">
             <span className="card-label">
-              FOCUS MODULES // 03
+              FOCUS MODULES // 05
             </span>
 
             <div className="focus-grid">
@@ -90,7 +190,9 @@ export function Dashboard({
                       <span
                         className={`priority priority-${area.priority}`}
                       >
-                        {area.priority}
+                        {
+                          area.priority
+                        }
                       </span>
                     </div>
 
@@ -99,7 +201,9 @@ export function Dashboard({
                     </h3>
 
                     <p>
-                      {area.description}
+                      {
+                        area.description
+                      }
                     </p>
                   </article>
                 ),
@@ -107,9 +211,12 @@ export function Dashboard({
             </div>
           </section>
 
+
+          {/* Action plan */}
+
           <section className="dashboard-card wide action-card">
             <span className="card-label">
-              ACTION PROTOCOL // 04
+              YOUR NEXT MOVES // 06
             </span>
 
             <div className="action-list">
@@ -131,7 +238,9 @@ export function Dashboard({
                       </h3>
 
                       <p>
-                        {step.description}
+                        {
+                          step.description
+                        }
                       </p>
 
                       <ul>
@@ -150,9 +259,48 @@ export function Dashboard({
             </div>
           </section>
 
+
+          {/* Things to try */}
+
+          <section className="dashboard-card wide">
+            <span className="card-label">
+              MAYBE TRY // 07
+            </span>
+
+            <div className="try-grid">
+              {dashboard.things_to_try.map(
+                (item) => (
+                  <article
+                    className="try-card"
+                    key={item.title}
+                  >
+                    <span>
+                      +
+                    </span>
+
+                    <div>
+                      <h3>
+                        {item.title}
+                      </h3>
+
+                      <p>
+                        {
+                          item.description
+                        }
+                      </p>
+                    </div>
+                  </article>
+                ),
+              )}
+            </div>
+          </section>
+
+
+          {/* Check in */}
+
           <section className="dashboard-card checkin-card">
             <span className="card-label">
-              DAILY CHECK-IN // 05
+              CHECK-IN // 08
             </span>
 
             <div className="terminal-icon">
@@ -160,18 +308,26 @@ export function Dashboard({
             </div>
 
             <h2>
-              {dashboard.daily_check_in.question}
+              {
+                dashboard.daily_check_in
+                  .question
+              }
             </h2>
 
             <span className="checkin-type">
-              TYPE //{" "}
-              {dashboard.daily_check_in.type}
+              {
+                dashboard.daily_check_in
+                  .type
+              }
             </span>
           </section>
 
+
+          {/* Encouragement */}
+
           <section className="dashboard-card encouragement-card">
             <span className="card-label">
-              SYSTEM MESSAGE // 06
+              MESSAGE // 09
             </span>
 
             <div className="gear-symbol">
@@ -179,26 +335,33 @@ export function Dashboard({
             </div>
 
             <h2>
-              {dashboard.encouragement.title}
+              {
+                dashboard.encouragement
+                  .title
+              }
             </h2>
 
             <p>
-              {dashboard.encouragement.message}
+              {
+                dashboard.encouragement
+                  .message
+              }
             </p>
           </section>
         </div>
 
+
         <footer className="dashboard-footer">
           <span>
-            MENTAL HEALTH HUB // PERSONALIZATION
-            ENGINE
+            HUB // PROFILE
+            SYNCHRONIZED
           </span>
 
           <button
             className="button secondary"
             onClick={onRestart}
           >
-            RUN NEW ASSESSMENT
+            ← START SOMEWHERE ELSE
           </button>
         </footer>
       </section>
