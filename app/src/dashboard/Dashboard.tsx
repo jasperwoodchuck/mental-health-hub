@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from "react";
+
 import type {
   Dashboard as DashboardData,
 } from "../api/dashboard";
@@ -18,10 +20,174 @@ const modeLabels = {
 };
 
 
+function getStorageKey(
+  dashboard: DashboardData,
+) {
+  return `mh-hub-dashboard-${dashboard.mode}`;
+}
+
+
 export function Dashboard({
   dashboard,
   onRestart,
 }: DashboardProps) {
+  const storageKey = getStorageKey(dashboard);
+
+  const [completedActions, setCompletedActions] =
+    useState<Record<string, boolean>>(() => {
+      try {
+        const stored =
+          localStorage.getItem(
+            `${storageKey}-actions`,
+          );
+
+        return stored
+          ? JSON.parse(stored)
+          : {};
+      } catch {
+        return {};
+      }
+    });
+
+  const [checkInAnswer, setCheckInAnswer] =
+    useState(() => {
+      try {
+        return (
+          localStorage.getItem(
+            `${storageKey}-checkin`,
+          ) ?? ""
+        );
+      } catch {
+        return "";
+      }
+    });
+
+  const [checkInSaved, setCheckInSaved] =
+    useState(() => {
+      try {
+        return (
+          localStorage.getItem(
+            `${storageKey}-checkin-saved`,
+          ) === "true"
+        );
+      } catch {
+        return false;
+      }
+    });
+
+  useEffect(() => {
+    localStorage.setItem(
+      `${storageKey}-actions`,
+      JSON.stringify(completedActions),
+    );
+  }, [
+    completedActions,
+    storageKey,
+  ]);
+
+  useEffect(() => {
+    if (checkInAnswer) {
+      localStorage.setItem(
+        `${storageKey}-checkin`,
+        checkInAnswer,
+      );
+    }
+  }, [
+    checkInAnswer,
+    storageKey,
+  ]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      `${storageKey}-checkin-saved`,
+      String(checkInSaved),
+    );
+  }, [
+    checkInSaved,
+    storageKey,
+  ]);
+
+  const totalActions = useMemo(
+    () =>
+      dashboard.action_plan.reduce(
+        (total, step) =>
+          total + step.actions.length,
+        0,
+      ),
+    [dashboard.action_plan],
+  );
+
+  const completedCount = useMemo(
+    () =>
+      dashboard.action_plan.reduce(
+        (total, step) =>
+          total +
+          step.actions.filter(
+            (_, actionIndex) =>
+              completedActions[
+                `${step.step}-${actionIndex}`
+              ],
+          ).length,
+        0,
+      ),
+    [
+      dashboard.action_plan,
+      completedActions,
+    ],
+  );
+
+  const progress =
+    totalActions === 0
+      ? 0
+      : Math.round(
+          (completedCount / totalActions) *
+            100,
+        );
+
+  function toggleAction(
+    stepNumber: number,
+    actionIndex: number,
+  ) {
+    const key = `${stepNumber}-${actionIndex}`;
+
+    setCompletedActions((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  }
+
+  function saveCheckIn() {
+    if (!checkInAnswer.trim()) {
+      return;
+    }
+
+    setCheckInSaved(true);
+  }
+
+  function editCheckIn() {
+    setCheckInSaved(false);
+  }
+
+  function restart() {
+    try {
+      localStorage.removeItem(
+        `${storageKey}-actions`,
+      );
+
+      localStorage.removeItem(
+        `${storageKey}-checkin`,
+      );
+
+      localStorage.removeItem(
+        `${storageKey}-checkin-saved`,
+      );
+    } catch {
+      // Ignore storage failures.
+    }
+
+    onRestart();
+  }
+
   return (
     <main className="dashboard-shell">
       <section className="panel dashboard-panel">
@@ -32,9 +198,7 @@ export function Dashboard({
           <div>
             <span className="eyebrow">
               PERSONAL SYSTEM //{" "}
-              {modeLabels[
-                dashboard.mode
-              ]}
+              {modeLabels[dashboard.mode]}
             </span>
 
             <h1 className="dashboard-title">
@@ -48,16 +212,11 @@ export function Dashboard({
 
           <div className="system-badge">
             <span className="system-dot" />
-
-            PROFILE
-            CALIBRATED
+            PROFILE CALIBRATED
           </div>
         </header>
 
-
         <div className="dashboard-grid">
-          {/* Personal read */}
-
           <section className="dashboard-card personal-read">
             <span className="card-label">
               YOUR READ // 01
@@ -68,15 +227,9 @@ export function Dashboard({
             </h2>
 
             <p>
-              {
-                dashboard.personal_read
-                  .description
-              }
+              {dashboard.personal_read.description}
             </p>
           </section>
-
-
-          {/* Summary */}
 
           <section className="dashboard-card summary-card">
             <span className="card-label">
@@ -88,15 +241,9 @@ export function Dashboard({
             </h2>
 
             <p>
-              {
-                dashboard.summary
-                  .description
-              }
+              {dashboard.summary.description}
             </p>
           </section>
-
-
-          {/* Quick win */}
 
           <section className="dashboard-card quick-win-card">
             <div className="quick-win-header">
@@ -105,10 +252,7 @@ export function Dashboard({
               </span>
 
               <span className="duration">
-                {
-                  dashboard.quick_win
-                    .duration
-                }
+                {dashboard.quick_win.duration}
               </span>
             </div>
 
@@ -117,10 +261,7 @@ export function Dashboard({
             </h2>
 
             <p>
-              {
-                dashboard.quick_win
-                  .description
-              }
+              {dashboard.quick_win.description}
             </p>
 
             <div className="activation-line">
@@ -129,12 +270,9 @@ export function Dashboard({
             </div>
           </section>
 
-
-          {/* Strengths */}
-
           <section className="dashboard-card">
             <span className="card-label">
-              WHAT YOU'VE GOT // 04
+              WHAT YOU&apos;VE GOT // 04
             </span>
 
             <div className="strength-list">
@@ -150,15 +288,11 @@ export function Dashboard({
 
                     <div>
                       <strong>
-                        {
-                          strength.title
-                        }
+                        {strength.title}
                       </strong>
 
                       <p>
-                        {
-                          strength.description
-                        }
+                        {strength.description}
                       </p>
                     </div>
                   </article>
@@ -166,9 +300,6 @@ export function Dashboard({
               )}
             </div>
           </section>
-
-
-          {/* Focus areas */}
 
           <section className="dashboard-card wide">
             <span className="card-label">
@@ -183,27 +314,19 @@ export function Dashboard({
                     key={area.title}
                   >
                     <div className="focus-top">
-                      <span>
-                        MODULE
-                      </span>
+                      <span>MODULE</span>
 
                       <span
                         className={`priority priority-${area.priority}`}
                       >
-                        {
-                          area.priority
-                        }
+                        {area.priority}
                       </span>
                     </div>
 
-                    <h3>
-                      {area.title}
-                    </h3>
+                    <h3>{area.title}</h3>
 
                     <p>
-                      {
-                        area.description
-                      }
+                      {area.description}
                     </p>
                   </article>
                 ),
@@ -211,13 +334,32 @@ export function Dashboard({
             </div>
           </section>
 
-
           {/* Action plan */}
-
           <section className="dashboard-card wide action-card">
-            <span className="card-label">
-              YOUR NEXT MOVES // 06
-            </span>
+            <div className="action-header">
+              <div>
+                <span className="card-label">
+                  YOUR NEXT MOVES // 06
+                </span>
+
+                <p className="action-progress-label">
+                  {completedCount}/{totalActions} ACTIONS COMPLETE
+                </p>
+              </div>
+
+              <div className="action-progress">
+                <div className="action-progress-track">
+                  <div
+                    className="action-progress-fill"
+                    style={{
+                      width: `${progress}%`,
+                    }}
+                  />
+                </div>
+
+                <span>{progress}%</span>
+              </div>
+            </div>
 
             <div className="action-list">
               {dashboard.action_plan.map(
@@ -233,23 +375,62 @@ export function Dashboard({
                     </div>
 
                     <div className="step-content">
-                      <h3>
-                        {step.title}
-                      </h3>
+                      <h3>{step.title}</h3>
 
                       <p>
-                        {
-                          step.description
-                        }
+                        {step.description}
                       </p>
 
-                      <ul>
+                      <ul className="action-items">
                         {step.actions.map(
-                          (action) => (
-                            <li key={action}>
-                              {action}
-                            </li>
-                          ),
+                          (
+                            action,
+                            actionIndex,
+                          ) => {
+                            const key = `${step.step}-${actionIndex}`;
+                            const completed =
+                              Boolean(
+                                completedActions[
+                                  key
+                                ],
+                              );
+
+                            return (
+                              <li
+                                key={key}
+                                className={
+                                  completed
+                                    ? "action-item completed"
+                                    : "action-item"
+                                }
+                              >
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      completed
+                                    }
+                                    onChange={() =>
+                                      toggleAction(
+                                        step.step,
+                                        actionIndex,
+                                      )
+                                    }
+                                  />
+
+                                  <span className="action-checkbox">
+                                    {completed
+                                      ? "✓"
+                                      : ""}
+                                  </span>
+
+                                  <span className="action-text">
+                                    {action}
+                                  </span>
+                                </label>
+                              </li>
+                            );
+                          },
                         )}
                       </ul>
                     </div>
@@ -258,9 +439,6 @@ export function Dashboard({
               )}
             </div>
           </section>
-
-
-          {/* Things to try */}
 
           <section className="dashboard-card wide">
             <span className="card-label">
@@ -274,19 +452,13 @@ export function Dashboard({
                     className="try-card"
                     key={item.title}
                   >
-                    <span>
-                      +
-                    </span>
+                    <span>+</span>
 
                     <div>
-                      <h3>
-                        {item.title}
-                      </h3>
+                      <h3>{item.title}</h3>
 
                       <p>
-                        {
-                          item.description
-                        }
+                        {item.description}
                       </p>
                     </div>
                   </article>
@@ -295,9 +467,7 @@ export function Dashboard({
             </div>
           </section>
 
-
-          {/* Check in */}
-
+          {/* Daily check-in */}
           <section className="dashboard-card checkin-card">
             <span className="card-label">
               CHECK-IN // 08
@@ -308,22 +478,60 @@ export function Dashboard({
             </div>
 
             <h2>
-              {
-                dashboard.daily_check_in
-                  .question
-              }
+              {dashboard.daily_check_in.question}
             </h2>
 
+            {checkInSaved ? (
+              <div className="checkin-complete">
+                <span className="checkin-complete-mark">
+                  ✓
+                </span>
+
+                <div>
+                  <strong>CHECK-IN SAVED</strong>
+
+                  <p>{checkInAnswer}</p>
+
+                  <button
+                    type="button"
+                    className="checkin-edit"
+                    onClick={editCheckIn}
+                  >
+                    EDIT RESPONSE
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="checkin-form">
+                <textarea
+                  className="checkin-input"
+                  value={checkInAnswer}
+                  onChange={(event) =>
+                    setCheckInAnswer(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Type a short response..."
+                  rows={3}
+                />
+
+                <button
+                  type="button"
+                  className="button primary checkin-button"
+                  disabled={
+                    !checkInAnswer.trim()
+                  }
+                  onClick={saveCheckIn}
+                >
+                  SAVE CHECK-IN
+                </button>
+              </div>
+            )}
+
             <span className="checkin-type">
-              {
-                dashboard.daily_check_in
-                  .type
-              }
+              {dashboard.daily_check_in.type}
             </span>
           </section>
-
-
-          {/* Encouragement */}
 
           <section className="dashboard-card encouragement-card">
             <span className="card-label">
@@ -335,31 +543,23 @@ export function Dashboard({
             </div>
 
             <h2>
-              {
-                dashboard.encouragement
-                  .title
-              }
+              {dashboard.encouragement.title}
             </h2>
 
             <p>
-              {
-                dashboard.encouragement
-                  .message
-              }
+              {dashboard.encouragement.message}
             </p>
           </section>
         </div>
 
-
         <footer className="dashboard-footer">
           <span>
-            HUB // PROFILE
-            SYNCHRONIZED
+            HUB // PROFILE SYNCHRONIZED
           </span>
 
           <button
             className="button secondary"
-            onClick={onRestart}
+            onClick={restart}
           >
             ← START SOMEWHERE ELSE
           </button>

@@ -1,19 +1,15 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import {
-  generateDashboard,
-} from "../api/dashboard";
-
-import {
-  modes,
   questions,
+  modes,
 } from "./questions";
 
 import type {
-  Answer,
   Answers,
   DashboardMode,
 } from "./types";
@@ -22,177 +18,262 @@ import {
   QuestionRenderer,
 } from "./components/QuestionRenderer";
 
+import {
+  generateDashboard,
+} from "../api/dashboard";
+
 
 interface AssessmentProps {
   onComplete: (
     dashboard: Awaited<
-      ReturnType<
-        typeof generateDashboard
-      >
+      ReturnType<typeof generateDashboard>
     >,
   ) => void;
 }
 
 
-type LoadingStage = {
-  label: string;
-  delay: number;
-};
-
-
-const loadingStages: LoadingStage[] = [
-  {
-    label: "READING YOUR RESPONSES",
-    delay: 350,
-  },
-  {
-    label: "MAPPING YOUR CURRENT STATE",
-    delay: 650,
-  },
-  {
-    label: "FINDING PATTERNS",
-    delay: 700,
-  },
-  {
-    label: "BUILDING YOUR PLAN",
-    delay: 650,
-  },
-  {
-    label: "CALIBRATING YOUR DASHBOARD",
-    delay: 500,
-  },
+const OSD_STAGES = [
+  "READING INPUT",
+  "MAPPING RESPONSES",
+  "BUILDING PERSONAL MODEL",
+  "CALIBRATING RECOMMENDATIONS",
+  "FINALIZING PROFILE",
 ];
-
-
-function isAnswerEmpty(
-  answer: Answer | undefined,
-): boolean {
-  if (answer === undefined) {
-    return true;
-  }
-
-  if (typeof answer === "string") {
-    return answer.trim().length === 0;
-  }
-
-  if (Array.isArray(answer)) {
-    return answer.length === 0;
-  }
-
-  return false;
-}
-
-
-function LoadingScreen({
-  stage,
-  progress,
-}: {
-  stage: string;
-  progress: number;
-}) {
-  return (
-    <div className="osd-screen">
-      <div className="osd-top">
-        <span>
-          MENTAL HEALTH HUB
-        </span>
-
-        <span>
-          OSD // PERSONALIZATION
-        </span>
-      </div>
-
-      <div className="osd-center">
-        <div className="osd-symbol">
-          MH
-        </div>
-
-        <div className="osd-title">
-          BUILDING YOUR PROFILE
-        </div>
-
-        <div className="osd-stage">
-          {stage}
-        </div>
-
-        <div className="osd-progress">
-          <div
-            className="osd-progress-fill"
-            style={{
-              width: `${progress}%`,
-            }}
-          />
-        </div>
-
-        <div className="osd-percentage">
-          {Math.round(progress)}%
-        </div>
-      </div>
-
-      <div className="osd-log">
-        <div>
-          &gt; INPUT RECEIVED
-        </div>
-
-        <div>
-          &gt; CONTEXT MAPPED
-        </div>
-
-        <div>
-          &gt; PERSONALIZATION ENGINE ACTIVE
-        </div>
-
-        <div className="osd-active">
-          &gt; {stage}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 export function Assessment({
   onComplete,
 }: AssessmentProps) {
-  const [mode, setMode] =
-    useState<DashboardMode | null>(
-      null,
+  const [
+    mode,
+    setMode,
+  ] = useState<
+    DashboardMode | null
+  >(null);
+
+  const [
+    currentIndex,
+    setCurrentIndex,
+  ] = useState(0);
+
+  const [
+    answers,
+    setAnswers,
+  ] = useState<Answers>({});
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
+
+  const [
+    progress,
+    setProgress,
+  ] = useState(0);
+
+  const [
+    stage,
+    setStage,
+  ] = useState(OSD_STAGES[0]);
+
+  const visibleQuestions = useMemo(() => {
+    if (!mode) {
+      return [];
+    }
+
+    return questions.filter(
+      (question) =>
+        !question.modes ||
+        question.modes.includes(mode),
+    );
+  }, [mode]);
+
+  const currentQuestion =
+    visibleQuestions[currentIndex];
+
+  const currentAnswer =
+    currentQuestion
+      ? answers[currentQuestion.id]
+      : undefined;
+
+  const isLastQuestion =
+    currentIndex ===
+    visibleQuestions.length - 1;
+
+  const hasAnswer =
+    currentAnswer !== undefined &&
+    currentAnswer !== "" &&
+    !(
+      Array.isArray(currentAnswer) &&
+      currentAnswer.length === 0
     );
 
-  const [answers, setAnswers] =
-    useState<Answers>({});
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
 
-  const [currentIndex, setCurrentIndex] =
-    useState(0);
+    setProgress(0);
+    setStage(OSD_STAGES[0]);
 
-  const [loading, setLoading] =
-    useState(false);
+    const startTime = Date.now();
 
-  const [loadingStage, setLoadingStage] =
-    useState(
-      "INITIALIZING",
-    );
+    const timer = window.setInterval(() => {
+      const elapsed =
+        Date.now() - startTime;
 
-  const [loadingProgress, setLoadingProgress] =
-    useState(0);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-
-  const visibleQuestions =
-    useMemo(() => {
-      if (!mode) {
-        return [];
-      }
-
-      return questions.filter(
-        (question) =>
-          !question.modes ||
-          question.modes.includes(mode),
+      /*
+       * Keep the visual animation moving,
+       * but never let it reach 100% before
+       * the API response is ready.
+       */
+      const visualProgress = Math.min(
+        94,
+        Math.round(
+          (elapsed / 5000) * 94,
+        ),
       );
-    }, [mode]);
 
+      setProgress(
+        visualProgress,
+      );
+
+      const stageIndex = Math.min(
+        OSD_STAGES.length - 1,
+        Math.floor(
+          visualProgress /
+            (94 / OSD_STAGES.length),
+        ),
+      );
+
+      setStage(
+        OSD_STAGES[stageIndex],
+      );
+    }, 100);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [loading]);
+
+  function selectMode(
+    selectedMode: DashboardMode,
+  ) {
+    setMode(selectedMode);
+    setCurrentIndex(0);
+    setAnswers({});
+    setError(null);
+  }
+
+  function updateAnswer(
+    value:
+      | string
+      | string[]
+      | number,
+  ) {
+    if (!currentQuestion) {
+      return;
+    }
+
+    setAnswers((current) => ({
+      ...current,
+      [currentQuestion.id]: value,
+    }));
+
+    setError(null);
+  }
+
+  function goBack() {
+    if (currentIndex === 0) {
+      setMode(null);
+      return;
+    }
+
+    setCurrentIndex(
+      (current) => current - 1,
+    );
+    setError(null);
+  }
+
+  async function submitAssessment() {
+    if (!mode || !hasAnswer) {
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    /*
+     * Start the real request immediately.
+     * The OSD animation runs independently.
+     */
+    try {
+      const dashboard =
+        await generateDashboard(
+          mode,
+          answers,
+        );
+
+      /*
+       * Give the final calibration state
+       * a short visual moment after the
+       * actual response has arrived.
+       */
+      setStage(
+        "PROFILE CALIBRATED",
+      );
+      setProgress(100);
+
+      await new Promise<void>(
+        (resolve) =>
+          window.setTimeout(
+            resolve,
+            350,
+          ),
+      );
+
+      onComplete(dashboard);
+    } catch (requestError) {
+      console.error(
+        "Dashboard generation failed:",
+        requestError,
+      );
+
+      setLoading(false);
+      setProgress(0);
+
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to generate your dashboard.",
+      );
+    }
+  }
+
+  async function next() {
+    if (!hasAnswer) {
+      setError(
+        "Please provide a response before continuing.",
+      );
+
+      return;
+    }
+
+    if (!isLastQuestion) {
+      setCurrentIndex(
+        (current) => current + 1,
+      );
+
+      return;
+    }
+
+    await submitAssessment();
+  }
 
   if (!mode) {
     return (
@@ -203,33 +284,29 @@ export function Assessment({
 
           <div className="mode-intro">
             <span className="eyebrow">
-              PERSONAL WELLBEING SYSTEM
+              MENTAL HEALTH HUB // INITIALIZE
             </span>
 
             <h1>
-              What do you need
-              right now?
+              Where should we start?
             </h1>
 
             <p>
-              You don't have to figure
-              everything out at once.
-              Start with whatever feels
-              closest to where you are.
+              Choose what feels most relevant
+              right now. Your answers will shape
+              the dashboard we build for you.
             </p>
           </div>
 
           <div className="mode-grid">
             {modes.map((item) => (
               <button
-                key={item.id}
+                type="button"
                 className="mode-card"
-                onClick={() => {
-                  setMode(item.id);
-                  setAnswers({});
-                  setCurrentIndex(0);
-                  setError(null);
-                }}
+                key={item.id}
+                onClick={() =>
+                  selectMode(item.id)
+                }
               >
                 <span className="mode-icon">
                   {item.icon}
@@ -258,160 +335,62 @@ export function Assessment({
     );
   }
 
-
   if (loading) {
     return (
-      <LoadingScreen
-        stage={loadingStage}
-        progress={loadingProgress}
-      />
+      <div className="osd-screen">
+        <div className="osd-top">
+          <span>
+            MH-HUB // PERSONAL SYSTEM
+          </span>
+
+          <span>
+            BUILD 01
+          </span>
+        </div>
+
+        <div className="osd-center">
+          <div className="osd-symbol">
+            ◆
+          </div>
+
+          <div className="osd-title">
+            GENERATING YOUR PROFILE
+          </div>
+
+          <div className="osd-stage">
+            {stage}
+          </div>
+
+          <div className="osd-progress">
+            <div
+              className="osd-progress-fill"
+              style={{
+                width: `${progress}%`,
+              }}
+            />
+          </div>
+
+          <div className="osd-percentage">
+            {progress}%
+          </div>
+        </div>
+
+        <div className="osd-log">
+          <div>
+            [ OK ] INPUT MATRIX RECEIVED
+          </div>
+
+          <div>
+            [ OK ] RESPONSE PATTERNS MAPPED
+          </div>
+
+          <div className="osd-active">
+            [ ... ] {stage}
+          </div>
+        </div>
+      </div>
     );
   }
-
-
-  const question =
-    visibleQuestions[currentIndex];
-
-  const currentAnswer =
-    answers[question.id];
-
-  const isLastQuestion =
-    currentIndex ===
-    visibleQuestions.length - 1;
-
-  const progress =
-    ((currentIndex + 1) /
-      visibleQuestions.length) *
-    100;
-
-
-  function updateAnswer(
-    value: Answer,
-  ) {
-    setAnswers((previous) => ({
-      ...previous,
-      [question.id]: value,
-    }));
-
-    setError(null);
-  }
-
-
-  async function handleNext() {
-    if (
-      question.required &&
-      isAnswerEmpty(currentAnswer)
-    ) {
-      setError(
-        "This one needs an answer before we continue.",
-      );
-
-      return;
-    }
-
-    if (!isLastQuestion) {
-      setCurrentIndex(
-        (index) => index + 1,
-      );
-
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      setLoadingProgress(4);
-
-      let progressValue = 4;
-
-      const progressTimer =
-        window.setInterval(() => {
-          progressValue = Math.min(
-            progressValue + 2,
-            94,
-          );
-
-          setLoadingProgress(
-            progressValue,
-          );
-        }, 100);
-
-      let accumulatedDelay = 0;
-
-      for (
-        let index = 0;
-        index < loadingStages.length;
-        index++
-      ) {
-        const stage =
-          loadingStages[index];
-
-        await new Promise<void>(
-          (resolve) => {
-            window.setTimeout(() => {
-              setLoadingStage(
-                stage.label,
-              );
-
-              resolve();
-            }, accumulatedDelay);
-          },
-        );
-
-        accumulatedDelay +=
-          stage.delay;
-      }
-
-      const dashboard =
-        await generateDashboard(
-          mode,
-          answers,
-        );
-
-      window.clearInterval(
-        progressTimer,
-      );
-
-      setLoadingProgress(100);
-      setLoadingStage(
-        "PROFILE READY",
-      );
-
-      await new Promise<void>(
-        (resolve) => {
-          window.setTimeout(
-            resolve,
-            350,
-          );
-        },
-      );
-
-      onComplete(dashboard);
-    } catch (err) {
-      setLoading(false);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while creating your dashboard.",
-      );
-    }
-  }
-
-
-  function handleBack() {
-    if (currentIndex === 0) {
-      setMode(null);
-      return;
-    }
-
-    setCurrentIndex(
-      (index) => index - 1,
-    );
-
-    setError(null);
-  }
-
 
   return (
     <main className="assessment-shell">
@@ -419,22 +398,18 @@ export function Assessment({
         <div className="panel-corner panel-corner-top" />
         <div className="panel-corner panel-corner-bottom" />
 
-        <div className="assessment-header">
+        <header className="assessment-header">
           <div>
             <span className="eyebrow">
-              MODE //{" "}
+              ASSESSMENT //{" "}
               {mode.toUpperCase()}
             </span>
 
             <span className="question-counter">
-              NODE{" "}
-              {String(
-                currentIndex + 1,
-              ).padStart(2, "0")}{" "}
-              /{" "}
-              {String(
-                visibleQuestions.length,
-              ).padStart(2, "0")}
+              QUESTION{" "}
+              {currentIndex + 1}
+              {" / "}
+              {visibleQuestions.length}
             </span>
           </div>
 
@@ -443,65 +418,79 @@ export function Assessment({
               <div
                 className="progress-bar"
                 style={{
-                  width: `${progress}%`,
+                  width: `${
+                    ((currentIndex + 1) /
+                      visibleQuestions.length) *
+                    100
+                  }%`,
                 }}
               />
             </div>
 
             <span className="progress-text">
-              {Math.round(progress)}%
+              {Math.round(
+                ((currentIndex + 1) /
+                  visibleQuestions.length) *
+                  100,
+              )}
+              %
             </span>
           </div>
-        </div>
+        </header>
 
-        <div className="question-area">
-          <span className="section-code">
-            // INPUT SEQUENCE
-          </span>
+        {currentQuestion && (
+          <div className="question-area">
+            <span className="eyebrow">
+              INPUT //{" "}
+              {String(
+                currentIndex + 1,
+              ).padStart(2, "0")}
+            </span>
 
-          <h1>
-            {question.title}
-          </h1>
+            <h1>
+              {currentQuestion.title}
+            </h1>
 
-          {question.description && (
-            <p className="question-description">
-              {question.description}
-            </p>
-          )}
+            {currentQuestion.description && (
+              <p className="question-description">
+                {
+                  currentQuestion.description
+                }
+              </p>
+            )}
 
-          <QuestionRenderer
-            question={question}
-            value={currentAnswer}
-            onChange={
-              updateAnswer
-            }
-          />
-        </div>
+            <QuestionRenderer
+              question={currentQuestion}
+              value={currentAnswer}
+              onChange={updateAnswer}
+            />
 
-        {error && (
-          <div className="error-message">
-            <span>!</span>
-
-            {error}
+            {error && (
+              <div className="error-message">
+                <span>!</span>
+                {error}
+              </div>
+            )}
           </div>
         )}
 
         <div className="assessment-actions">
           <button
-            className="button secondary"
             type="button"
-            onClick={handleBack}
+            className="button secondary"
+            onClick={goBack}
           >
             ← BACK
           </button>
 
           <button
-            className="button primary"
             type="button"
-            onClick={handleNext}
+            className="button primary"
+            disabled={!hasAnswer}
+            onClick={next}
           >
             {isLastQuestion
-              ? "BUILD MY DASHBOARD →"
+              ? "GENERATE PROFILE →"
               : "CONTINUE →"}
           </button>
         </div>

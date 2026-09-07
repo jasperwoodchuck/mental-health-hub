@@ -2018,3 +2018,569 @@ p {
     padding: 18px;
   }
 }
+
+/* =========================================
+   INTERACTIVE DASHBOARD
+========================================= */
+
+.action-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  margin-bottom: 12px;
+}
+
+.action-progress-label {
+  margin: -5px 0 0;
+
+  color: var(--muted);
+
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.action-progress {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 180px;
+
+  color: var(--cyan);
+
+  font-family: monospace;
+  font-size: 8px;
+}
+
+.action-progress-track {
+  flex: 1;
+
+  height: 3px;
+
+  background: #20282a;
+}
+
+.action-progress-fill {
+  height: 100%;
+
+  background: var(--cyan);
+
+  box-shadow:
+    0 0 10px
+    rgba(80, 238, 238, 0.5);
+
+  transition:
+    width 250ms ease;
+}
+
+
+/* =========================================
+   ACTION ITEMS
+========================================= */
+
+.action-items {
+  display: grid;
+
+  gap: 5px;
+
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.action-item {
+  margin: 0;
+  padding: 0;
+}
+
+.action-item label {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 9px;
+
+  min-height: 31px;
+
+  padding: 6px 8px;
+
+  color: var(--muted);
+
+  border:
+    1px solid
+    transparent;
+
+  cursor: pointer;
+
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.action-item label:hover {
+  color: var(--text);
+
+  background:
+    rgba(80, 238, 238, 0.025);
+
+  border-color:
+    rgba(80, 238, 238, 0.12);
+}
+
+.action-item input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+.action-checkbox {
+  display: grid;
+  place-items: center;
+
+  flex-shrink: 0;
+
+  width: 15px;
+  height: 15px;
+
+  margin-top: 1px;
+
+  color: var(--cyan);
+
+  border:
+    1px solid
+    var(--cyan);
+
+  font-family: monospace;
+  font-size: 9px;
+
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.action-item.completed label {
+  color: #63706f;
+}
+
+.action-item.completed .action-checkbox {
+  background:
+    rgba(80, 238, 238, 0.12);
+
+  box-shadow:
+    0 0 10px
+    rgba(80, 238, 238, 0.12);
+}
+
+.action-item.completed .action-text {
+  text-decoration: line-through;
+  text-decoration-color:
+    rgba(137, 147, 146, 0.45);
+}
+
+
+/* =========================================
+   CHECK-IN
+========================================= */
+
+.checkin-form {
+  display: grid;
+
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
+.checkin-input {
+  width: 100%;
+
+  min-height: 78px;
+
+  padding: 10px;
+
+  color: var(--text);
+
+  background: var(--panel-3);
+
+  border:
+    1px solid
+    rgba(80, 238, 238, 0.18);
+
+  outline: none;
+
+  resize: vertical;
+
+  font-size: 0.78rem;
+
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.checkin-input::placeholder {
+  color: #586261;
+}
+
+.checkin-input:focus {
+  border-color: var(--cyan);
+
+  box-shadow:
+    0 0 0 1px var(--cyan),
+    0 0 20px
+    rgba(80, 238, 238, 0.07);
+}
+
+.checkin-button {
+  justify-self: start;
+
+  padding:
+    8px 12px;
+
+  font-size: 8px;
+}
+
+.checkin-complete {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 10px;
+
+  margin-top: 13px;
+
+  padding: 10px;
+
+  background:
+    rgba(80, 238, 238, 0.035);
+
+  border:
+    1px solid
+    rgba(80, 238, 238, 0.18);
+}
+
+.checkin-complete-mark {
+  display: grid;
+  place-items: center;
+
+  flex-shrink: 0;
+
+  width: 24px;
+  height: 24px;
+
+  color: var(--cyan);
+
+  border:
+    1px solid
+    var(--cyan);
+
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.checkin-complete strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: var(--cyan);
+
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.checkin-complete p {
+  margin: 0 0 7px;
+
+  font-size: 0.75rem;
+}
+
+.checkin-edit {
+  padding: 0;
+
+  color: var(--muted);
+
+  background: transparent;
+
+  border: 0;
+
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+
+  text-decoration: underline;
+}
+
+.checkin-edit:hover {
+  color: var(--cyan);
+}
+
+
+/* =========================================
+   INTERACTION ACCESSIBILITY
+========================================= */
+
+.action-item label:focus-within {
+  border-color: var(--cyan);
+
+  box-shadow:
+    0 0 0 1px
+    rgba(80, 238, 238, 0.12);
+}
+
+.checkin-edit:focus-visible,
+.action-item label:focus-within {
+  outline: 1px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+
+/* =========================================
+   INTERACTIVE MOBILE
+========================================= */
+
+@media (max-width: 760px) {
+  .action-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .action-progress {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .checkin-button {
+    width: 100%;
+  }
+}
+/* =========================================================
+   DASHBOARD — DENSER DESKTOP LAYOUT
+   ========================================================= */
+
+@media (min-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Keep these sections full width */
+  .dashboard-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  /* Make normal dashboard text easier to read */
+  .dashboard-card p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .dashboard-card h2 {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .dashboard-card h3 {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
+  /* Focus modules */
+  .focus-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .focus-card {
+    padding: 16px;
+  }
+
+  .focus-top {
+    font-size: 9px;
+  }
+
+  .focus-card p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .priority {
+    font-size: 9px;
+  }
+
+  /* =======================================================
+     ACTION PLAN — TWO COLUMNS
+     ======================================================= */
+
+  .action-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .action-step {
+    grid-template-columns: 42px 1fr;
+    gap: 13px;
+    padding: 15px;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
+  }
+
+  .step-content h3 {
+    font-size: 1rem;
+    margin-bottom: 7px;
+  }
+
+  .step-content p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 9px;
+  }
+
+  .step-content ul {
+    padding-left: 18px;
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+
+  .step-content li {
+    margin-bottom: 4px;
+  }
+
+  /* =======================================================
+     THINGS TO TRY — MULTI COLUMN
+     ======================================================= */
+
+  .try-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .try-card {
+    padding: 14px;
+  }
+
+  .try-card h3 {
+    font-size: 0.98rem;
+  }
+
+  .try-card p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  /* =======================================================
+     CHECK-IN + ENCOURAGEMENT
+     ======================================================= */
+
+  .checkin-card h2,
+  .encouragement-card h2 {
+    font-size: 1.2rem;
+  }
+
+  .checkin-card p,
+  .encouragement-card p {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .checkin-type {
+    font-size: 9px;
+  }
+
+  /* Action progress */
+  .action-progress-label {
+    font-size: 9px;
+  }
+
+  .action-progress-percent {
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================================
+   MEDIUM SCREENS
+   ========================================================= */
+
+@media (min-width: 700px) and (max-width: 899px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  .action-list {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .try-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .focus-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-card p {
+    font-size: 0.88rem;
+  }
+
+  .step-content p,
+  .step-content ul {
+    font-size: 0.84rem;
+  }
+}
+
+
+/* =========================================================
+   MOBILE — RETURN TO SINGLE COLUMN
+   ========================================================= */
+
+@media (max-width: 699px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card.wide {
+    grid-column: auto;
+  }
+
+  .action-list,
+  .try-grid,
+  .focus-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card p {
+    font-size: 0.88rem;
+  }
+
+  .step-content p,
+  .step-content ul {
+    font-size: 0.84rem;
+  }
+}

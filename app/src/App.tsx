@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -15,14 +16,59 @@ import type {
 } from "./api/dashboard";
 
 
+const DASHBOARD_STORAGE_KEY =
+  "mh-hub-dashboard";
+
+
 function App() {
   const [
     dashboard,
     setDashboard,
   ] = useState<
     DashboardData | null
-  >(null);
+  >(() => {
+    try {
+      const stored =
+        localStorage.getItem(
+          DASHBOARD_STORAGE_KEY,
+        );
 
+      if (!stored) {
+        return null;
+      }
+
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(
+        DASHBOARD_STORAGE_KEY,
+      );
+
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (!dashboard) {
+      localStorage.removeItem(
+        DASHBOARD_STORAGE_KEY,
+      );
+
+      return;
+    }
+
+    localStorage.setItem(
+      DASHBOARD_STORAGE_KEY,
+      JSON.stringify(dashboard),
+    );
+  }, [dashboard]);
+
+  function restart() {
+    localStorage.removeItem(
+      DASHBOARD_STORAGE_KEY,
+    );
+
+    setDashboard(null);
+  }
 
   return (
     <div className="app">
@@ -53,9 +99,7 @@ function App() {
       {dashboard ? (
         <Dashboard
           dashboard={dashboard}
-          onRestart={() =>
-            setDashboard(null)
-          }
+          onRestart={restart}
         />
       ) : (
         <Assessment
@@ -65,6 +109,5 @@ function App() {
     </div>
   );
 }
-
 
 export default App;
